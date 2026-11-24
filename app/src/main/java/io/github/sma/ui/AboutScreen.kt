@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.content.pm.Signature
 import android.net.Uri
 import android.os.Build
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,9 +24,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -33,7 +40,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import io.github.sma.R
+import io.github.sma.core.UpdateChecker
+import kotlinx.coroutines.launch
 import java.security.MessageDigest
+import java.text.DateFormat
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +57,9 @@ fun AboutScreen(nav: NavController) {
             .getOrNull() ?: "unknown"
     }
     val certFingerprint = remember(context) { signingCertSha256(context) ?: "unavailable" }
+    val scope = rememberCoroutineScope()
+    val lastCheckMs by UpdateChecker.lastCheckMs.collectAsState()
+    var checking by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -96,6 +110,37 @@ fun AboutScreen(nav: NavController) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
+            }
+            Column {
+                Text("Updates", style = MaterialTheme.typography.labelMedium)
+                Text(
+                    text = if (lastCheckMs == 0L) {
+                        "Last checked: never"
+                    } else {
+                        "Last checked: " + DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
+                            .format(Date(lastCheckMs))
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                TextButton(
+                    enabled = !checking,
+                    onClick = {
+                        checking = true
+                        scope.launch {
+                            val message = when (val result = UpdateChecker.checkNow(context)) {
+                                is UpdateChecker.CheckResult.UpToDate -> "You have the latest version"
+                                is UpdateChecker.CheckResult.Available ->
+                                    "Version ${result.update.tag.trimStart('v', 'V')} is available"
+                                is UpdateChecker.CheckResult.Failed ->
+                                    "Could not check for updates: ${result.message}"
+                            }
+                            checking = false
+                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                        }
+                    },
+                ) {
+                    Text("Check now")
+                }
             }
             OutlinedButton(onClick = { nav.navigate(Routes.LICENSES) }) {
                 Text("Open-source licenses")

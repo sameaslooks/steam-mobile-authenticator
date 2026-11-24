@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import io.github.sma.core.appUserAgent
 import io.github.sma.core.steam.AuthApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -50,13 +51,6 @@ private const val HTTP_TIMEOUT_MS = 10_000
 private const val MAP_INITIAL_ZOOM = 11.5
 private const val MAP_MIN_ZOOM = 3.0
 private const val MAP_MAX_ZOOM = 18.0
-
-/** User-Agent required by OpenStreetMap services (Nominatim and tile servers). */
-internal fun appUserAgent(ctx: Context): String {
-    val version = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }
-        .getOrNull() ?: "unknown"
-    return "SMA/$version (io.github.sameaslooks.sma)"
-}
 
 /**
  * Resolves approximate coordinates for a sign-in request: first from Steam's "lat,lon" geolocation,

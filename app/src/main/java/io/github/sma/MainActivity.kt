@@ -13,6 +13,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import io.github.sma.background.NavExtras
 import io.github.sma.background.BackgroundScheduler
 import io.github.sma.background.Notifier
+import io.github.sma.core.UpdateChecker
 import io.github.sma.core.steam.SteamTime
 import io.github.sma.data.AccountRepository
 import io.github.sma.data.AppLock
@@ -33,10 +34,14 @@ class MainActivity : FragmentActivity() {
         takeRouteFrom(intent)
 
         AccountRepository.init(applicationContext)
+        UpdateChecker.init(applicationContext)
         Notifier.ensureChannels(this)
         lifecycleScope.launch {
             AccountRepository.load()
             BackgroundScheduler.apply(applicationContext, AccountRepository.settings.value.notifications)
+            if (AccountRepository.settings.value.checkForUpdates) {
+                launch { UpdateChecker.maybeCheck(applicationContext) }
+            }
         }
 
         lifecycleScope.launch {

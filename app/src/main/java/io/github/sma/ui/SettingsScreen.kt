@@ -111,6 +111,18 @@ fun SettingsScreen(nav: NavController) {
         }
     }
 
+    fun setCheckForUpdates(on: Boolean) {
+        scope.launch {
+            try {
+                AccountRepository.updateSettings { it.copy(checkForUpdates = on) }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(context, "Could not save settings: ${e.userMessage()}", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) {
@@ -289,6 +301,31 @@ fun SettingsScreen(nav: NavController) {
                 Switch(
                     checked = settings.showSignInMap,
                     onCheckedChange = { on -> setShowSignInMap(on) },
+                )
+            }
+
+            Text(
+                text = "Updates",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Check for updates",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        text = "Once a day, asks GitHub whether a newer version is released. Nothing is downloaded or installed automatically.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = settings.checkForUpdates,
+                    onCheckedChange = { on -> setCheckForUpdates(on) },
                 )
             }
 

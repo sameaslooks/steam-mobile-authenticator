@@ -58,6 +58,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import io.github.sma.background.ConfirmationMonitor
+import io.github.sma.core.UpdateChecker
 import io.github.sma.core.mafile.SteamAccount
 import io.github.sma.core.steam.ConfirmationsApi
 import io.github.sma.core.steam.SteamTime
@@ -86,6 +87,8 @@ fun AccountsScreen(nav: NavController) {
     val scope = rememberCoroutineScope()
     val snackbarState = remember { SnackbarHostState() }
     val accounts by AccountRepository.accounts.collectAsState()
+    val settings by AccountRepository.settings.collectAsState()
+    val updateAvailable by UpdateChecker.available.collectAsState()
     val loadError by AccountRepository.loadError.collectAsState()
     val pending by ConfirmationMonitor.pending.collectAsState()
     val loginRequests by ConfirmationMonitor.loginRequests.collectAsState()
@@ -292,6 +295,35 @@ fun AccountsScreen(nav: NavController) {
                                 )
                                 TextButton(onClick = { scope.launch { SteamTime.sync() } }) {
                                     Text("Retry")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (settings.checkForUpdates) {
+                    updateAvailable?.let { update ->
+                        item(key = "update") {
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                ) {
+                                    Text(
+                                        text = "Version ${update.tag.trimStart('v', 'V')} is available",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        TextButton(onClick = { UpdateChecker.dismiss(context, update.tag) }) {
+                                            Text("Dismiss")
+                                        }
+                                        TextButton(onClick = { openUrl(context, update.url) }) {
+                                            Text("Open release")
+                                        }
+                                    }
                                 }
                             }
                         }

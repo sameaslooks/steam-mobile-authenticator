@@ -12,7 +12,8 @@ SMA is an open-source Steam Guard mobile authenticator for Android. Unlike the o
 - **Alerts** — background checks for new confirmations and sign-in requests: periodic (every 15, 30 or 60 minutes) or real-time (every 30 s to 5 min).
 - **Accounts** — import a `.maFile` (plain or SDA-encrypted). Move the authenticator from the official Steam app with a code sent by SMS or email, or remove it with the revocation code and link a new one. Search, sort and reorder accounts. Nicknames are shown next to logins.
 - **Backup** — export a `.maFile` (SDA format) or an `otpauth` URI.
-- **Privacy** — connects only to Steam, plus OpenStreetMap for the sign-in map (can be turned off). No telemetry, no own servers, no auto-update.
+- **Update notice** — checks GitHub once a day for a newer release and shows a banner on Accounts. Only a notice: nothing is downloaded or installed. Can be turned off in Settings.
+- **Privacy** — connects only to Steam, plus OpenStreetMap for the sign-in map (can be turned off), and `api.github.com` once a day to check for a newer release (Settings → Check for updates, on by default; nothing is downloaded automatically). No telemetry, no own servers, no auto-update.
 
 ## Download
 
@@ -72,7 +73,7 @@ Approximate battery use:
 
 | Permission | Why |
 |---|---|
-| `INTERNET` | Talk to Steam servers; OpenStreetMap tiles and Nominatim geocoding for the sign-in map |
+| `INTERNET` | Talk to Steam servers; OpenStreetMap tiles and Nominatim geocoding for the sign-in map; GitHub API for the daily update check |
 | `CAMERA` | Scan login QR codes (optional) |
 | `USE_BIOMETRIC` | Unlock the vault and approve actions |
 | `POST_NOTIFICATIONS` | Show confirmation and sign-in alerts |
@@ -88,7 +89,7 @@ Approximate battery use:
 - Biometric unlock, shown on launch.
 - Screenshots and screen recording are blocked.
 - Android backup is disabled.
-- Network access is limited to Steam, plus OpenStreetMap tile and Nominatim hosts for the sign-in map.
+- Network access is limited to Steam, plus OpenStreetMap tile and Nominatim hosts for the sign-in map, plus `api.github.com` for the daily update check (Settings → Check for updates; on by default; notice only, nothing is downloaded or installed).
 - The built-in WebView has no JavaScript bridges.
 
 Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/sameaslooks/steam-mobile-authenticator/security/advisories).

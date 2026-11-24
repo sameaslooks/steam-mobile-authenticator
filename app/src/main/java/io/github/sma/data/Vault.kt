@@ -58,6 +58,7 @@ data class Settings(
     val requireUnlock: Boolean = true,
     val notifications: NotificationSettings = NotificationSettings(),
     val showSignInMap: Boolean = true,
+    val checkForUpdates: Boolean = true,
 )
 
 @Serializable
