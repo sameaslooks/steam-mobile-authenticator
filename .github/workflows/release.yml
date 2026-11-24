@@ -1,0 +1,155 @@
+name: Release APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "Mark the GitHub release as a pre-release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version
+        shell: bash
+        run: |
+          VERSION="$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts || true)"
+          if [ -z "$VERSION" ]; then
+            echo "::error::versionName not found in app/build.gradle.kts"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=v$VERSION" >> "$GITHUB_ENV"
+          echo "Version $VERSION, tag v$VERSION"
+
+      - name: Fail if tag already exists
+        shell: bash
+        run: |
+          if [ -n "$(git ls-remote --tags origin "refs/tags/$TAG")" ]; then
+            echo "::error::Release $TAG already exists; bump versionName"
+            exit 1
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # The ubuntu runner ships an Android SDK in $ANDROID_HOME. setup-android@v3 is not used:
+      # it insists on the removed "tools" package and fails.
+      - name: Install SDK packages
+        shell: bash
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0" > /dev/null
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.11.1
+
+      - name: Prepare signing keystore
+        shell: bash
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          missing=()
+          if [ -z "$SIGNING_KEYSTORE_BASE64" ]; then missing+=(SIGNING_KEYSTORE_BASE64); fi
+          if [ -z "$SIGNING_STORE_PASSWORD" ]; then missing+=(SIGNING_STORE_PASSWORD); fi
+          if [ -z "$SIGNING_KEY_ALIAS" ]; then missing+=(SIGNING_KEY_ALIAS); fi
+          if [ -z "$SIGNING_KEY_PASSWORD" ]; then missing+=(SIGNING_KEY_PASSWORD); fi
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing repository secrets: ${missing[*]}. See README, section Releases via GitHub Actions."
+            exit 1
+          fi
+          mkdir -p .signing
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 -d > .signing/release.jks
+          {
+            printf 'storeFile=../.signing/release.jks\n'
+            printf 'storePassword=%s\n' "$SIGNING_STORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$SIGNING_KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$SIGNING_KEY_PASSWORD"
+          } > .signing/keystore.properties
+
+      - name: Build and unit test
+        shell: bash
+        run: gradle --no-daemon testReleaseUnitTest assembleRelease
+
+      - name: Verify APK signature
+        shell: bash
+        run: |
+          APK="app/build/outputs/apk/release/app-release.apk"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          "$APKSIGNER" verify --print-certs "$APK" > "$RUNNER_TEMP/apksigner.txt"
+          CERT_DN="$(grep -m1 'certificate DN:' "$RUNNER_TEMP/apksigner.txt" | sed 's/^.*certificate DN: //' || true)"
+          CERT_SHA256="$(grep -m1 'certificate SHA-256 digest:' "$RUNNER_TEMP/apksigner.txt" | sed 's/^.*certificate SHA-256 digest: //' || true)"
+          if [ -z "$CERT_SHA256" ]; then
+            echo "::error::Could not read signing certificate from $APK"
+            exit 1
+          fi
+          echo "Signer DN: $CERT_DN"
+          echo "Signer SHA-256: $CERT_SHA256"
+          echo "CERT_SHA256=$CERT_SHA256" >> "$GITHUB_ENV"
+
+      - name: Package APK and checksum
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/sma-$VERSION.apk"
+          (cd dist && sha256sum "sma-$VERSION.apk" > "sma-$VERSION.apk.sha256")
+          APK_SHA256="$(cut -d' ' -f1 "dist/sma-$VERSION.apk.sha256")"
+          echo "APK_SHA256=$APK_SHA256" >> "$GITHUB_ENV"
+          echo "SHA-256: $APK_SHA256"
+
+      - name: Write release notes
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/release-notes.md" <<EOF
+          Version: $VERSION
+          SHA-256 of the APK: $APK_SHA256
+          Signing certificate SHA-256: $CERT_SHA256
+
+          Universal APK (all CPU architectures).
+          EOF
+
+      - name: Create GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          args=()
+          if [ "$PRERELEASE" = "true" ]; then args+=(--prerelease); fi
+          gh release create "$TAG" \
+            "dist/sma-$VERSION.apk" \
+            "dist/sma-$VERSION.apk.sha256" \
+            --title "SMA $VERSION" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --target "$GITHUB_SHA" \
+            "${args[@]}"
+
+      - name: Remove signing material
+        if: always()
+        shell: bash
+        run: rm -rf .signing

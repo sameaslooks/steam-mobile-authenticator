@@ -1,0 +1,18 @@
+.gradle/
+build/
+*/build/
+.tools/
+.signing/
+dist/
+local.properties
+.idea/
+*.iml
+captures/
+.kotlin/
+*.apk
+*.aab
+.DS_Store
+.build-log.txt
+
+# Internal design notes, kept local
+SPEC.md
