@@ -14,6 +14,8 @@ SMA is licensed under the MIT License. It includes the following third-party com
 | osmdroid | osmdroid contributors | Apache License 2.0 | https://github.com/osmdroid/osmdroid |
 | OpenStreetMap map data | © OpenStreetMap contributors | Open Database License (ODbL) | https://www.openstreetmap.org/copyright |
 
+OpenStreetMap attribution is shown on the sign-in map and in About → Open-source licenses.
+
 The full text of the Apache License 2.0 is available at https://www.apache.org/licenses/LICENSE-2.0 and is bundled in the app under About → Open-source licenses.
 
 ## ZXing NOTICE

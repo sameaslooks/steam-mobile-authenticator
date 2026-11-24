@@ -40,6 +40,7 @@ import java.security.MessageDigest
 fun AboutScreen(nav: NavController) {
     val context = LocalContext.current
     val repoUrl = stringResource(R.string.repo_url)
+    val authorUrl = stringResource(R.string.author_url)
     val versionName = remember(context) {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
             .getOrNull() ?: "unknown"
@@ -69,9 +70,19 @@ fun AboutScreen(nav: NavController) {
                 text = "SMA — Steam Mobile Authenticator",
                 style = MaterialTheme.typography.titleLarge,
             )
+            Text(
+                text = "An open-source Steam Guard authenticator for Android. Generates login codes, lets you review and confirm trades and market listings, and approve sign-ins by QR code or notification. Secrets stay encrypted on your device — no servers, no telemetry.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
             Column {
                 Text("Version $versionName", style = MaterialTheme.typography.bodyMedium)
                 Text("Package ${context.packageName}", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = "by Sergei K. · @sameaslooks",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { openUrl(context, authorUrl) },
+                )
             }
             Column(
                 modifier = Modifier
@@ -102,10 +113,6 @@ fun AboutScreen(nav: NavController) {
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            Text(
-                text = "Map data © OpenStreetMap contributors (ODbL)",
-                style = MaterialTheme.typography.bodySmall,
-            )
             Text(
                 text = "Not affiliated with Valve Corporation. Steam is a trademark of Valve.",
                 style = MaterialTheme.typography.bodySmall,
