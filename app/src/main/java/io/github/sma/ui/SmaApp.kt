@@ -54,6 +54,7 @@ object Routes {
     const val ABOUT = "about"
     const val TRANSFER = "transfer"
     const val SETTINGS = "settings"
+    const val LICENSES = "licenses"
 
     const val DEFAULT_BROWSER_URL = "https://steamcommunity.com/my/tradeoffers/"
     const val INVENTORY_URL = "https://steamcommunity.com/my/inventory/"
@@ -148,6 +149,9 @@ fun SmaApp(activity: FragmentActivity, pendingRoute: MutableStateFlow<String?>) 
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(nav)
+            }
+            composable(Routes.LICENSES) {
+                LicensesScreen(nav)
             }
             composable(
                 route = Routes.ACCOUNT,

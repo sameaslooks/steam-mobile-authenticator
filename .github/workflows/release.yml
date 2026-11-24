@@ -155,7 +155,7 @@ jobs:
           gh release create "$TAG" \
             "dist/sma-$VERSION.apk" \
             "dist/sma-$VERSION.apk.sha256" \
-            --title "SMA $VERSION" \
+            --title "SMA $TAG" \
             --notes-file "$RUNNER_TEMP/release-notes.md" \
             --target "$GITHUB_SHA" \
             "${args[@]}"

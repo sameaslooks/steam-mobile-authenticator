@@ -20,6 +20,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -85,6 +86,9 @@ fun AboutScreen(nav: NavController) {
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
+            OutlinedButton(onClick = { nav.navigate(Routes.LICENSES) }) {
+                Text("Open-source licenses")
+            }
             Column {
                 Text("Signing certificate SHA-256", style = MaterialTheme.typography.labelMedium)
                 SelectionContainer {
@@ -110,7 +114,7 @@ fun AboutScreen(nav: NavController) {
     }
 }
 
-private fun openUrl(context: Context, url: String) {
+internal fun openUrl(context: Context, url: String) {
     try {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     } catch (ignored: ActivityNotFoundException) {

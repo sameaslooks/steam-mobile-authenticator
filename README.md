@@ -140,9 +140,11 @@ Required repository secrets (Settings → Secrets and variables → Actions):
 
 Create `SIGNING_KEYSTORE_BASE64` from the local key:
 
-- Windows PowerShell: `[Convert]::ToBase64String([IO.File]::ReadAllBytes(".signing\release.jks")) | Set-Clipboard`
-- Linux: `base64 -w0 .signing/release.jks`
-- macOS: `base64 -i .signing/release.jks | tr -d '\n'`
+- Windows PowerShell (copies the value to the clipboard): `[Convert]::ToBase64String([IO.File]::ReadAllBytes(".signing\release.jks")) | Set-Clipboard`
+- Linux (prints the value): `base64 -w0 .signing/release.jks`
+- macOS (prints the value): `base64 -i .signing/release.jks | tr -d '\n'`
+
+Paste the value into the `SIGNING_KEYSTORE_BASE64` secret, then clear the clipboard or terminal.
 
 CI must sign with the same key as local builds. Otherwise, updates over a locally built install will fail.
 
