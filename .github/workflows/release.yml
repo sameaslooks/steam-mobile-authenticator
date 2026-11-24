@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write      # build provenance attestation
+  attestations: write  # build provenance attestation
 
 concurrency:
   group: release
@@ -122,6 +124,12 @@ jobs:
           echo "APK_SHA256=$APK_SHA256" >> "$GITHUB_ENV"
           echo "SHA-256: $APK_SHA256"
 
+      # Signed statement that this exact APK was built by this workflow from this commit.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/sma-${{ env.VERSION }}.apk
+
       - name: Write release notes
         shell: bash
         run: |
@@ -131,6 +139,9 @@ jobs:
           Signing certificate SHA-256: $CERT_SHA256
 
           Universal APK (all CPU architectures).
+
+          Built by GitHub Actions from commit $GITHUB_SHA. Verify the build provenance:
+          \`gh attestation verify sma-$VERSION.apk -R $GITHUB_REPOSITORY\`
           EOF
 
       - name: Create GitHub release

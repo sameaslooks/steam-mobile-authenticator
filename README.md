@@ -22,6 +22,7 @@ Verify the APK before installing:
 
 - Compare its SHA-256 with the value in the release notes.
 - Check the signing certificate with `apksigner verify --print-certs`.
+- Confirm the APK was built by GitHub Actions from this repository: `gh attestation verify sma-<version>.apk -R sameaslooks/steam-mobile-authenticator`.
 
 ## Getting started
 
